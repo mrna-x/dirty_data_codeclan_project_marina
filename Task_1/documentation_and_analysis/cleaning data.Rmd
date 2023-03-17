@@ -1,0 +1,87 @@
+```{r}
+
+library(tidyverse)
+library(janitor)
+```
+
+-- Read the data
+
+```{r}
+
+decathlon <- read_rds('raw_data/decathlon.rds')
+
+skimr::skim(decathlon)
+
+
+#view names
+decathlon %>% names()
+
+```
+-- Cleaning names
+
+```{r}
+
+##Try janitor
+
+decathlon %>% janitor::clean_names()
+
+### I dont like this output so I am going to do this manually.
+```
+
+-- Manually tidy up names to snake_case
+--- Find a way to organise the first column as its a mix of capitals and lowercase
+
+```{r}
+
+decathlon_names_cleaned <- rename(decathlon,
+                                  ##100m
+                             "long_jump" = "Long.jump",   
+                            "shot_put" = "Shot.put",   
+                            "high_jump"  = "High.jump",   
+                               ##  "400m"       
+                             "110m_hurdle" = "110m.hurdle", 
+                             "discus" = "Discus",    
+                             "pole_vault" = "Pole.vault",  
+                             "javeline" = "Javeline",
+                             # "1500m"      
+                              "rank" = "Rank",        
+                            "points"= "Points",      
+                             "competition" = "Competition")
+
+decathlon_v1 <- rownames_to_column(decathlon_names_cleaned, var = "athlete")
+
+glimpse(decathlon_v1)
+
+
+decathlon_v1 %>% 
+    mutate("athlete" = tolower())
+
+
+## Q1. best long jump
+
+long_jump_best <- select(decathlon_v1, athlete, long_jump) %>% arrange(desc(long_jump))
+
+
+```
+
+
+```{r}
+
+#5. What was the average points for competitors who ran the 400m in less than 50 seconds vs. those than ran 400m in more than 50 seconds?
+
+  decathlon_v1 %>% 
+filter("400m"<50) %>% 
+    summarise(mean(points)) %>% 
+    pull()
+    decathlon_v1 %>% 
+filter("400m">=50) %>% 
+    summarise(mean(points)) %>% 
+      pull()
+
+```
+
+```{r}
+
+
+```
+

@@ -1,0 +1,322 @@
+---
+title: "Analysis"
+output: html_document
+date: "2023-03-15"
+---
+
+# __CLEANING DATA__
+# get columns names from 3 files
+# 2015 - deleting columns (based on their names)
+## 2015 - deleting colums we do not need (based on their index)
+## 2015 - count columns numbers so we can compare
+## 2016 - deleting colums we do not need (based on their index)
+## 2016 count columns numbers so we can compare
+## 2017 - deleting colums we do not need (based on their index)
+## 2017 count columns numbers so we can compare
+#obtaining unique names of "country" columns (2016 and 2017, as 2015 doesn't have country data)
+# Changed various names for US, UK and Canada to "United States", "United Kingdom" and "Canada" in 2016
+# Changed various names for US, UK and Canada to "United States", "United Kingdom" and "Canada" in 2017
+# Named countries other than UK,USA and Canada as OTHER (2016 and 2017)
+#introducing column "age" in all three datasets (2015, 2016, 2017) and populating it with mutate
+#running Janitor for 2015 and 2016
+# Renaming candy names column in 2017
+## 2015 and 2016: creating a "year" column with mutate and extracting data for it from a timestamp column
+# 2017 creating a column "year" and populating it with "2017"
+#2016 and 2017 - renaming "gender"columns.
+#finding names of columns unique for 2015 and 2016
+#unifying candy names in 2015 and 2016
+#finding names of columns unique for 2016 and 2017
+#unifying candy names in 2015 and 2016
+#COMBINING ALL 3 DATASETS with bind_rows, creating a dataset named combine_candy
+#comparing number of columns in 3 datasets and a number of columns in combine_candy dataset
+#deleting columns we don't need from combine_candy
+# Unifying column "are you trick or treating" (because we forgot to do it before; as a result, we united three columns and cleaned values in them from NA)
+#checking number of columns in a final dataset
+#writing dataset to a file
+
+# __ANALYSIS__
+
+# load libraries
+```{r}
+
+library(tidyverse)
+library(ggplot2)
+library(scales)
+```
+
+# read clean data
+```{r}
+
+candy_analysis <- read_csv("clean_data/clean_candy.csv")
+
+```
+
+##1. What is the total number of candy ratings given across the three years. (Number of candy ratings, not the number of raters. Don’t count missing values)
+
+```{r}
+
+# What is the total number of candy ratings given across the three years. (Number of candy ratings, not the number of raters. Don’t count missing values)
+
+candy_analysis_ratings <- candy_analysis %>%
+    
+    select(-c("Year","age","are_you_trick_or_treating","gender",
+              "country", "internal_id"))
+
+   sum(!is.na(candy_analysis_ratings))
+
+
+```
+
+##2. What was the average age of people who are going out trick or treating?
+##3. What was the average age of people who are not going trick or treating?
+
+```{r}
+
+av_age_trick_or_treating <- candy_analysis %>%
+group_by(are_you_trick_or_treating) %>%
+    filter(age <= 100) %>%
+         summarise(average_age = mean(age,na.rm= TRUE))
+
+av_age_trick_or_treating
+
+##average age of people going trick or treating: 35 (rounded)
+##average age of people not going trick or treating: 39 (rounded)
+```
+
+##5. How many people rated Starburst as despair?
+```{r}
+
+filter(candy_analysis, starburst == "DESPAIR") %>% count()
+
+
+#The number of people that really don't like Starburst (rated it as despair) = 1990
+```
+#4. For each of joy, despair and meh, which candy bar received the most of these ratings?
+```{r}
+
+    candy_totals <- candy_analysis_ratings %>%
+          gather("candy_bar","ratings") %>%
+            group_by(candy_bar, ratings) %>% count(ratings, name = "total") %>%
+            arrange(desc(`total`))
+    
+#run the code below for totals for each rating
+head(filter(candy_totals, ratings == "DESPAIR")
+head(filter(candy_totals, ratings == "JOY")
+head(filter(candy_totals, ratings == "MEH")
+
+```
+
+#For the next three questions, count despair as -1, joy as +1, and meh as 0.
+##What was the most popular candy bar by this rating system for each gender in the data set ?
+```{r}
+candy_favourite_gender <- candy_analysis %>%
+    select("Year", "gender", "country")
+
+candy_by_gender <- bind_cols(candy_favourite_gender, candy_analysis_ratings)
+
+##candy_2 will give the most popular candy bar by the rating system for each gender in the data set. 
+#men, women and NA all prefer any_sized_candy_bar
+
+candy_2 <- pivot_longer(candy_by_gender, cols=c(4:93),
+             names_to = "candy",
+             values_to="rating",
+             values_drop_na = TRUE) %>%
+mutate(rating = case_when(
+    rating == "JOY" ~ 1,
+    rating == "DESPAIR" ~ -1,
+    rating == "MEH" ~ 0)) %>% 
+  group_by(gender, candy) %>% 
+  summarise(sum=sum(rating)) %>% 
+  slice_max(sum, n=3)
+```
+
+##What was the most popular candy bar in each year?
+```{r}
+
+candy_3 <- pivot_longer(candy_by_gender, cols=c(4:93),
+             names_to = "candy",
+             values_to="rating",
+             values_drop_na = TRUE) %>%
+mutate(rating = case_when(
+    rating == "JOY" ~ 1,
+    rating == "DESPAIR" ~ -1,
+    rating == "MEH" ~ 0)) %>% 
+  group_by(Year, candy) %>% 
+  summarise(sum=sum(rating)) %>% 
+  slice_max(sum, n=3)
+
+##candy_3 will give the answer without plotting a graph. It is any_size_candy_bar for all years
+
+```
+
+##What was the most popular candy bar by this rating for people in US, Canada, UK, and all other countries?
+```{r}
+
+candy_4 <- pivot_longer(candy_by_gender, cols=c(4:93),
+             names_to = "candy",
+             values_to="rating",
+             values_drop_na = TRUE) %>%
+mutate(rating = case_when(
+    rating == "JOY" ~ 1,
+    rating == "DESPAIR" ~ -1,
+    rating == "MEH" ~ 0)) %>% 
+  group_by(country, candy) %>% 
+  summarise(sum=sum(rating)) %>% 
+  slice_max(sum, n=3)
+
+##Candy_4 will give the the answer without plotting a graph
+#UK is the only outlier 
+
+```
+##What are the top three candy per gender
+```{r}
+
+
+ggplot(data = candy_2, aes(fill=candy, x = gender, y = sum)) +
+  geom_col(position="dodge", stat="identity") +
+  theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1))
+```
+
+## Top three candy bars by year
+```{r}
+ggplot(data = candy_3, aes(fill=candy, x = Year, y = sum)) +
+  geom_col(position="dodge", stat="identity") +
+  theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1))
+```
+## Top three candy bars by country
+
+```{r}
+
+ggplot(data = candy_4, aes(fill=candy, x = country, y = sum)) +
+  geom_col(position="dodge", stat="identity") +
+  theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1))
+
+##warning messages appear above but they still run
+
+```
+
+##Proportion of ratings (per year)
+```{r}
+
+
+
+candy_analysis_year <- candy_analysis %>%
+    select(-c("age","are_you_trick_or_treating","gender",
+              "country", 'internal_id')) %>%
+pivot_longer(cols=c(2:91),
+             names_to = "candy",
+             values_to="rating",
+             values_drop_na = TRUE) %>%
+  group_by(Year, rating) %>%
+  count()
+
+ggplot(candy_analysis_year, aes(fill=rating, x=Year, y=n)) +
+    geom_bar(position="fill", stat="identity") +
+labs(title = "Proportion of ratings (per year) ", x = "Year", y = "proportion")
+```
+
+##Proportion of ratings (per gender)
+```{r}
+
+candy_analysis_gender <- candy_analysis %>%
+    select(-c("age","are_you_trick_or_treating","Year",
+              "country", 'internal_id')) %>%
+pivot_longer(cols=-'gender',
+             names_to = "candy",
+             values_to="rating",
+             values_drop_na = TRUE) %>%
+  group_by(gender, rating) %>%
+  count()
+ggplot(candy_analysis_gender, aes(fill=rating, y=n, x=gender)) +
+    geom_bar(position="fill", stat='identity') +
+  labs(title = "Proportion of ratings (per gender) ", x = "gender", y = "proportion")
+```
+
+
+##Proportion of ratings (per year)
+```{r}
+##Proportion of ratings (per year)
+
+candy_analysis_missing_year <- candy_analysis %>%
+    select(-c("age","are_you_trick_or_treating","gender",
+              "country", 'internal_id')) %>% 
+pivot_longer(cols=c(2:91),
+             names_to = "candy",
+             values_to="rating") %>%
+group_by(Year, rating=is.na(rating)) %>% 
+  count()
+
+ggplot(candy_analysis_missing_year, aes(fill=rating, x=Year, y=n)) + 
+    geom_bar(position="fill", stat="identity") +
+labs(title = "Proportion of ratings (per year) ", x = "Year", y = "proportion",
+    subtitle = "False = Present data, True = Missing data",
+    fill = "Missing or not"
+  ) 
+
+## Proportion of missing values per gender
+candy_analysis_missing_gender <- candy_analysis %>%
+    select(-c("age","are_you_trick_or_treating","Year",
+              "country", 'internal_id')) %>% 
+pivot_longer(cols=-'gender',
+             names_to = "candy",
+             values_to="rating") %>%
+group_by(gender, rating = is.na(rating)) %>% count() 
+
+
+
+
+```
+
+##Proportion of missing values per year
+```{r}
+
+```{r}
+
+candy_analysis_missing_year <- candy_analysis %>%
+    select(-c("age","are_you_trick_or_treating","gender",
+              "country", 'internal_id')) %>% 
+pivot_longer(cols=c(2:91),
+             names_to = "candy",
+             values_to="rating") %>%
+group_by(Year, rating=is.na(rating)) %>% 
+  count()
+ggplot(candy_analysis_missing_year, aes(fill=rating, x=Year, y=n)) + 
+    geom_bar(position="fill", stat="identity") +
+labs(title = "Proportion of ratings (per year) ", x = "Year", y = "proportion", fill = "Missing or not", subtitle = "False = Present data, True = Missing data")+
+  scale_y_continuous(label = label_percent())
+```
+
+```{r}
+```
+##Proportion of missing values per country
+```{r}
+candy_analysis_missing_country <- candy_analysis %>%
+    select(-c("age","are_you_trick_or_treating","Year",
+              "gender", 'internal_id')) %>% 
+pivot_longer(cols=-'country',
+             names_to = "candy",
+             values_to="rating") %>%
+group_by(country, rating=is.na(rating)) %>% 
+  count()
+ggplot(candy_analysis_missing_country, aes(fill=rating, x=country, y=n)) + 
+    geom_bar(position="fill", stat="identity") +
+labs(title = "Proportion of ratings (per country)", x = "country", y = "proportion", fill = "Missing or not", subtitle = "False = Present data, True = Missing data")+
+  scale_y_continuous(label = label_percent())
+
+```
+##Proportion of missing values per gender
+```{r}
+candy_analysis_missing_gender <- candy_analysis %>%
+    select(-c("age","are_you_trick_or_treating","Year",
+              "country", 'internal_id')) %>% 
+pivot_longer(cols=-'gender',
+             names_to = "candy",
+             values_to="rating") %>%
+group_by(gender, rating=is.na(rating)) %>% 
+  count()
+# plot
+ggplot(candy_analysis_missing_gender, aes(fill=rating, x=gender, y=n)) + 
+    geom_bar(position="fill", stat="identity") +
+labs(title = "Proportion of ratings (per gender)", x = "gender", y = "proportion", fill = "Missing or not", subtitle = "False = Present data, True = Missing data")+
+  scale_y_continuous(label = label_percent())
+```

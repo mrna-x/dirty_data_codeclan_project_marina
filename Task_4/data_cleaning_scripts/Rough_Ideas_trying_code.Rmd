@@ -1,0 +1,200 @@
+```{r}
+library(tidyverse)
+library(readxl)
+##library(rio)
+```
+
+
+```{r}
+
+###combine all three xslx files
+
+all_candy_ratings <- dir("dirty_data/", full.name = TRUE) %>% map_df(read_excel)
+
+##view column names 
+
+all_candy_ratings %>%  names()
+
+##use janitor to clean all names
+    janitor_all_candy_ratings <- all_candy_ratings %>% janitor::clean_names() 
+
+##view collum names
+    
+    names(janitor_all_candy_ratings)
+    
+select(janitor_all_candy_ratings, "q4_country")
+
+
+```
+
+
+
+```{r}
+
+######
+
+candy_2015 <- read_excel("dirty_data/boing-boing-candy-2015.xlsx")
+candy_2016 <- read_excel("dirty_data/boing-boing-candy-2016.xlsx")
+candy_2017 <- read_excel("dirty_data/boing-boing-candy-2017.xlsx")
+
+glimpse(candy_2015)
+glimpse(candy_2016)
+glimpse(candy_2017)
+
+
+
+```
+
+```{r}
+candy_2017 <- read_excel("dirty_data/boing-boing-candy-2017.xlsx")
+
+##is.na(candy_2017)
+
+###candy_2017 %>% drop_na()
+
+glimpse(candy_2017)
+
+
+select(candy_2017,)
+
+ candy_2017$`Q2: GENDER` %>% is.na()
+ 
+ candy_2017 
+ 
+ ## candy_2017  %>% 
+ ## mutate(gender = is.na("Q2: GENDER"), .after = `Internal ID`)
+ 
+candy_country_na <- drop_na(candy_2017, "Q4: COUNTRY") %>% select("Q4: COUNTRY") 
+
+##get_dupes(candy_country_na)
+
+candy_2017 %>% janitor::get_dupes("Q4: COUNTRY") %>% select("Q4: COUNTRY")
+
+
+##candy_2017 %>% select("Q4: COUNTRY")
+    
+  
+
+```
+
+```{r}
+
+
+candy_2015 %>% names()
+
+
+
+```
+
+
+```{r}
+
+wrangled_candy_2017 <- candy_2017 %>% 
+  mutate(total_na = candy_2017 %>% 
+           select(starts_with("Q6")) %>%
+           is.na %>% rowSums) %>%
+  filter(total_na == 0)
+
+####wrangled_candy_2016 <- candy_2016 %>% 
+  mutate(total_na = candy_2016 %>% 
+           select(starts_with("Q6")) %>%
+           is.na %>% rowSums) %>%
+  filter(total_na == 0)
+```
+```{r}
+
+test <- select(candy_2015, -"[Bottle Caps]", -"[100 Grand Bar]")
+
+complete(candy_2015)
+
+
+```
+
+```{r}
+
+
+candy_2016 %>%
+  summarise(count = sum(is.na(candy_2016)))
+
+candy_2015 %>%
+  summarise(count = sum(is.na(candy_2015)))
+
+candy_2017 %>%
+  summarise(count = sum(is.na(candy_2017))) 
+
+
+
+
+```
+
+
+```{r}
+
+
+
+#Drop id, name and chapters columns using  within()
+
+candy_one <- (within(candy_2016, rm("[York Peppermint Patties] Ignore]"))
+
+candy_2015 %>% names()
+
+
+
+```
+
+```{r}
+
+
+
+candy_2016_del_range <- select(candy_2016, 
+                               -c(109:123), 
+                               -c(104, 105, 101, 102, 79, 49, 43, 46, 31, 32, 27, 21, 22, 12, 15,                                   13))
+
+##counts columns numbers so we can compare
+ncol(candy_2016) 
+ncol(candy_2016_del_range))
+```
+
+andy_2016_del_range$"Which country do you live in?" <- gsub('USA', 'United States', df$conf)
+
+
+
+df_col1 <- stri_replace_all_regex(candy_2016_del_range$"Which country do you live in?",
+                                  pattern=c("USA", "us", "usa", "Us", "Us", "US", "Murica", "United States", "united states", "Usa", "United staes", "United States of America", "United states", "u.s.a.", "USAUSAUSA", "america", "U.S.A.", "unhinged states", "united states of america", "Unites States", "US of A", "The United States", "North Carolina", "Unied States", "u.s.", "The United States of America", "unite states", "U.S.", "USA? Hard to tell anymore..", "'merica", "usas", "Pittsburgh", "United State", "New York", "Trumpistan", "United Sates", "USa", "I pretend to be from Canada, but I am really from the United States.", "Ahem....Amerca", "United Stated", "New Jersey", "California", "United ststes", "America", "United Statss", "murrika", "USA! USA! USA!", "USAA", "Alaska", "united States", "N. America", "USSA", "u s a", "United Statea", "united ststes", "USA USA USA!!!!"),
+                                  replacement=c("United Sates"),
+                                  vectorize=FALSE)
+
+df$conf <- gsub('East', 'E', df$conf)
+
+
+df_col1 <- stri_replace_all_regex(candy_2017_del_range$"Q4: COUNTRY",
+                                  pattern=c("(?i)USA", "(?i)us", "Murica$", "(?i)USA!", "United States$", "united states$", "United staes$", "United States of America$", "United states$", "u.s.a.$", "USAUSAUSA$", "america$", "(?i)U.S.A.$", "(?i)u.s.$", "unhinged states$", "united states of america$", "Unites States$", "US of A$", "The United States$", "North Carolina$", "Unied States$", "The United States of America$", "unite states$", "USA? Hard to tell anymore..$", "'merica$", "Pittsburgh$", "United State$", "New York", "Trumpistan", "United Sates", "I pretend to be from Canada, but I am really from the United States.", "Ahem....Amerca", "United Stated", "New Jersey", "California", "United ststes", "America", "United Statss", "murrika", "USA! USA! USA!$", "USAA$", "Alaska", "united States", "N. America", "USSA", "u s a$", "United Statea", "united ststes", "USA USA USA!!!!"),
+                                  replacement=c("United States"),
+                                  vectorize=FALSE)
+```
+
+```{r}
+df_col1 <- stri_replace_all_regex(candy_2017_del_range$"Q4: COUNTRY",
+                                  pattern=c("(?i)USA", "(?i)us", "Murica$", "(?i)USA!", "United States$", "united states$", "United staes$", "United States of America$", "United states$", "u.s.a.$", "USAUSAUSA$", "america$", "(?i)U.S.A.$", "(?i)u.s.$", "unhinged states$", "united states of america$", "Unites States$", "US of A$", "The United States$", "North Carolina$", "Unied States$", "The United States of America$", "unite states$", "USA? Hard to tell anymore..$", "'merica$", "Pittsburgh$", "United State$", "New York$", "Trumpistan$", "United Sates$", "I pretend to be from Canada, but I am really from the United States.$", "Ahem....Amerca$", "United Stated$", "New Jersey$", "California$", "United ststes$", "America$", "United Statss$", "murrika$", "USA! USA! USA!$", "USAA$", "Alaska$", "united States$", "N. America$", "USSA$", "u s a$", "United Statea$", "united ststes$", "USA USA USA!!!!$"),
+                                  replacement=c("United States"),
+                                  vectorize=FALSE)
+df_col1
+```
+```{r}
+
+##candy_2016_del_range %>% mutate(country = recode("which country do you live in?"
+                                                 "USA" = "United States", "us" = "United States", "usa" = "United States", "Us" = "United States", "us" = "United States")
+```
+
+```{r}
+
+candy_2017_del_range2 <- candy_2017_del_range %>% 
+  mutate_all(funs(str_replace(., "(?i)USA", "United States")))
+candy_2017_del_range2
+```
+
+
+```{r}
+candy_2017_del_range2 <- candy_2017_del_range %>% 
+  mutate_all(funs(str_replace(., "(?i)USA", "United States", "(?i)us", "United states"))
+             
